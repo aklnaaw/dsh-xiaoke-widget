@@ -5,6 +5,9 @@
 .dshw-*.json
 .dshw-*.json.bak*
 .dshw-usage-archive.json
+.dshxk-*.json
+.dshxk-*.json.bak*
+.dshxk-usage-archive.json
 .credentials.yaml
 .env
 gh-token.txt
@@ -17,6 +20,9 @@ config.toml
 whale-roles/
 whale-audio/
 whale-bubble-imgs/
+xiaoke-roles/
+xiaoke-audio/
+xiaoke-bubble-imgs/
 sessions/
 
 # 依赖与临时物
