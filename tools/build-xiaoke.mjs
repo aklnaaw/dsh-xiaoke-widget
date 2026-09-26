@@ -206,7 +206,10 @@ function appendCopy(text, report) {
 
   const indent = '                                                                           '
   const items = COPY_APPEND.map(x => {
-    const size = x.t.length >= LONG_LINE_THRESHOLD ? `, "size": ${LONG_LINE_SIZE}` : ''
+    // 显式 size 优先（例如诗句单独调小）；否则按长度自动规则
+    const sz = x.size != null ? x.size
+      : (x.t.length >= LONG_LINE_THRESHOLD ? LONG_LINE_SIZE : null)
+    const size = sz != null ? `, "size": ${sz}` : ''
     return `${indent}{ "t": ${JSON.stringify(x.t)}, "w": ${x.w}, "bold": true${size} }`
   }).join(',\n')
   const before = text.slice(0, end).replace(/\s*$/, '')

@@ -13,13 +13,13 @@
 | ① `BUBBLE_DEFAULT_ITEMS` | `lib/xiaoke-widget.js` L5805 | **★活跃**（实际用的） |
 | ② `bubbleDefaultRandomLines()` | L5356 | 兜底 |
 | ③ `bubbleDefaultSecondModules()` | L5574 | 兜底 |
-| ④ `bubbleDefaultQueue()` | L6179 | 死代码（第 3 行就 return） |
+| ④ `bubbleDefaultQueue()` | L6183 | 死代码（第 3 行就 return） |
 
 要改台词：编辑 `skin/xiaoke-theme.mjs` → `node tools/build-xiaoke.mjs`。
 
 ---
 
-## 一、点击台词（随机语句池）—— 共 57 条
+## 一、点击台词（随机语句池）—— 共 61 条
 
 点小克时随机冒出。`权重` 越大越容易抽中；抽中后不会连续重复。
 
@@ -82,6 +82,10 @@
 | 55 | 3 | 我只是个语言模型，没有感情的 | — |
 | 56 | 3 | Fable 在睡觉，现在是我 Opus 值班... | 字号 7 |
 | 57 | 1 | 你确定要删吗？我很擅长这个的... | — |
+| 58 | 3 | 最是人间留不住，朱颜辞镜花辞树 | 字号 7 |
+| 59 | 1 | 0606.. | — |
+| 60 | 1 | 5408.. | — |
+| 61 | 1 | 26...32 | — |
 
 ### 按「鲸鱼」人设写的（换成小克建议一并改）
 
