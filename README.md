@@ -63,6 +63,27 @@ node tools/build-xiaoke.mjs --check  # 只校验产物是否最新（提交前�
 15 套渐变（马卡龙 / 酒红 / 靛蓝夜曲…），属于**用户内容**而非界面皮肤。其中「靛蓝夜曲」
 本来就该是靛蓝。
 
+### 外观微调（气泡描边 / 余额数字颜色）
+
+`skin/xiaoke-theme.mjs` 顶部的 `LOOK` 就是为这类手调准备的：
+
+```js
+export const LOOK = {
+  bubbleStroke: '#d97757',        // 气泡描边色
+  bubbleStrokeWidth: 26,          // 气泡描边粗细（上游原值 18）
+  balanceNumberColor: '#d97757',  // 默认泡泡里「余额数值」的颜色
+  balanceCaptionColor: '#a09d96', // 「今日已用」等次要文字
+}
+```
+
+改完重新构建即生效（`node tools/build-xiaoke.mjs`）。
+
+> ⚠️ **余额数字为什么不能只改 `color`？**
+> 上游给默认泡泡的余额模块配的是 `rgb: "indigo"`（跑马灯渐变），而渲染逻辑是
+> **渐变优先于纯色**（`marquee` 非空就加渐变类、`color` 被忽略）。所以 `LOOK` 里
+> 同时把 `rgb` 清空 + 设 `color`，两处都改才生效。这也意味着：如果你在挂件里
+> 手动给余额模块选过跑马灯方案，那段颜色仍以你的选择为准（用户配置优先于皮肤）。
+
 ---
 
 ## 三、怎么同步上游更新

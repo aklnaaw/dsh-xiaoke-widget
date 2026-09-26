@@ -120,13 +120,37 @@ export const RGBA_MAP = {
   '246,248,253': '250,249,245',
 }
 
+// —— 外观微调（这三项按使用手感调，不用碰别的表）——
+export const LOOK = {
+  // 气泡描边色。默认用珊瑚橙（与角色发色/主色一致）。
+  bubbleStroke: '#d97757',
+  // 气泡描边粗细。上游原值 18（viewBox 1026×700）；调大可让边框更醒目。
+  bubbleStrokeWidth: 26,
+  // 默认泡泡里「余额数值」的颜色。
+  // ⚠️ 上游默认给余额模块配的是 `rgb: "indigo"` 跑马灯渐变，而渲染逻辑是
+  //    **渐变优先于纯色**（见 widget 里 marquee 分支）—— 只改 color 不生效，
+  //    必须同时把 rgb 清空，数值才会显示成这个纯色。
+  balanceNumberColor: '#d97757',
+  // 「今日已用」等次要文字沿用主题暖灰；如需单独调整，改这里
+  balanceCaptionColor: '#a09d96',
+}
+
 // 必须逐字命中的站点：JS 表达式里的裸颜色（没有 CSS 属性可比对）、
 // SVG 呈现属性（不是 CSS 属性），以及语义上需要单独定夺的地方。
 export const EXACT = [
   // 气泡是内联 SVG：fill / stroke 是**呈现属性**，不走 CSS 属性分支。
-  // 描边取自小克线稿的深棕（#482028 一系），比靛蓝更贴角色画风。
   ['fill="#FFFFFF"', 'fill="#faf9f5"'],
-  ['stroke="#203170"', 'stroke="#3d2b28"'],
+  ['stroke="#203170"', 'stroke="' + LOOK.bubbleStroke + '"'],
+  // 描边粗细：气泡主体 + 两个尾巴，三处一起加粗
+  ['stroke-width="18"', 'stroke-width="' + LOOK.bubbleStrokeWidth + '"'],
+
+  // —— 默认泡泡的「余额数值」：清掉跑马灯渐变，改用纯色 ——
+  // ① BUBBLE_DEFAULT_ITEMS（出厂默认泡泡，JSON 形态、带对齐空格）
+  ['"type":  "balance",\n                            "size":  20,\n                            "rgb":  "indigo",\n                            "color":  "",',
+   '"type":  "balance",\n                            "size":  20,\n                            "rgb":  "",\n                            "color":  "' + LOOK.balanceNumberColor + '",'],
+  // ② 常量缺失时的兜底路径（JS 对象字面量形态）
+  ['type: "balance",\n      size: 20,\n      rgb: "macaron",\n      color: "#203170",',
+   'type: "balance",\n      size: 20,\n      rgb: "",\n      color: "' + LOOK.balanceNumberColor + '",'],
 
   // 图表调色板首色 = 主色
   ["var USAGE_PALETTE = ['#203170'", "var USAGE_PALETTE = ['#d97757'"],
