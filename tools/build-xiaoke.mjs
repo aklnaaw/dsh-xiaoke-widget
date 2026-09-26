@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url'
 import {
   RENAMES, HEX_TEXT, HEX_FILL, HEX_FILL_OVERRIDE, RGBA_MAP, EXACT,
   TEXT_PROPS, FILL_PROPS,
+  COPY_REWRITE, COPY_APPEND, LONG_LINE_THRESHOLD, LONG_LINE_SIZE,
 } from '../skin/xiaoke-theme.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -144,6 +145,76 @@ function recolor(text, report) {
   return text
 }
 
+
+// —— 第 3 步：台词替换 ——
+// 上游把同一份台词池在源码里放了 4 份副本（1 活跃 + 2 兜底 + 1 死代码）。
+// 用全局字面量替换一次性覆盖全部副本，避免「改了不生效」。
+// 只替换台词字符串本身（带引号的形式），不会误伤注释里的同名文字以外的代码。
+function rewriteCopy(text, report) {
+  let out = text
+  const missed = []
+  for (const [from, to] of Object.entries(COPY_REWRITE)) {
+    if (from === to) continue
+    const n = out.split(from).length - 1
+    if (n === 0) { missed.push(from); continue }
+    out = out.split(from).join(to)
+  }
+  report.copyMissed = missed
+
+  // 长句自动降字号：上游对 25+ 字符的句子手配 size:7。
+  // ⚠️ 必须区分两种形态，否则会把 JSON 写坏：
+  //    ① JSON（BUBBLE_DEFAULT_ITEMS）：键名带引号 —— 只能用 `, "size": N`
+  //    ② JS 对象（兜底函数）：键名裸写 —— 只能用 `, size: N`
+  //    而且只在该句后面 120 字符内**还没有 size** 时才补，避免重复插入。
+  if (LONG_LINE_THRESHOLD) {
+    for (const to of Object.values(COPY_REWRITE)) {
+      if (to.length < LONG_LINE_THRESHOLD) continue
+      const esc = to.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      // ① JSON 形态：  "t":  "句子",  后面若没有 "size" 就补
+      out = out.replace(
+        new RegExp('("t":\\s*)(")' + esc + '\\2(?![\\s\\S]{0,140}?"size")', 'g'),
+        (m, head, q) => head + q + to + q + ', "size": ' + LONG_LINE_SIZE)
+      // ② JS 对象形态：  t: "句子",  后面若没有 size 就补
+      out = out.replace(
+        new RegExp('(\\bt:\\s*)(["\'])' + esc + '\\2(?![\\s\\S]{0,140}?\\bsize:)', 'g'),
+        (m, head, q) => head + q + to + q + ', size: ' + LONG_LINE_SIZE)
+    }
+  }
+  return out
+}
+
+// —— 第 4 步：追加新增台词 ——
+// 把 COPY_APPEND 插进活跃台词池（BUBBLE_DEFAULT_ITEMS 里那个 lines 数组）。
+// 只插活跃副本：兜底副本保持原样即可，它们是「常量解析失败」时的历史参照。
+function appendCopy(text, report) {
+  if (!COPY_APPEND.length) return text
+  const KEY = '"type":  "random",'
+  const idx = text.indexOf(KEY)
+  if (idx < 0) { report.appendSkipped = '找不到活跃台词池'; return text }
+  // 找该 random 模块里的 "lines": [ ... ]，在数组末尾追加
+  const linesKey = text.indexOf('"lines":', idx)
+  if (linesKey < 0) { report.appendSkipped = '找不到 lines 数组'; return text }
+  const open = text.indexOf('[', linesKey)
+  // 括号配对找数组结束
+  let depth = 0, end = -1
+  for (let k = open; k < text.length; k++) {
+    const c = text[k]
+    if (c === '[') depth++
+    else if (c === ']') { depth--; if (depth === 0) { end = k; break } }
+  }
+  if (end < 0) { report.appendSkipped = 'lines 数组未闭合'; return text }
+
+  const indent = '                                                                           '
+  const items = COPY_APPEND.map(x => {
+    const size = x.t.length >= LONG_LINE_THRESHOLD ? `, "size": ${LONG_LINE_SIZE}` : ''
+    return `${indent}{ "t": ${JSON.stringify(x.t)}, "w": ${x.w}, "bold": true${size} }`
+  }).join(',\n')
+  const before = text.slice(0, end).replace(/\s*$/, '')
+  const after = text.slice(end)
+  report.appended = COPY_APPEND.length
+  return before + ',\n' + items + '\n' + indent.slice(0, -8) + after
+}
+
 function build() {
   const hostSrc = pickSource(SRC_HOST, [
     path.join(ROOT, 'lib', 'index.js'),
@@ -163,8 +234,11 @@ function build() {
 
   const host = banner('宿主侧插件（小克版）', hostSrc) +
     recolor(rename(fs.readFileSync(hostSrc, 'utf8')), report)
-  const widget = banner('浏览器端挂件（小克版）', widgetSrc) +
-    recolor(rename(fs.readFileSync(widgetSrc, 'utf8')), report)
+  const widget = appendCopy(
+    rewriteCopy(
+      recolor(rename(fs.readFileSync(widgetSrc, 'utf8')), report),
+      report),
+    report)
 
   return { host, widget, report, hostSrc, widgetSrc }
 }
@@ -201,6 +275,12 @@ if (report.leftovers) {
     console.log(`   ${c}  ×${n}`)
   }
 }
+if (report.copyMissed && report.copyMissed.length) {
+  console.log('\n⚠️ 以下台词在源码里没找到（上游可能改过措辞，请更新主题表）：')
+  for (const m of report.copyMissed) console.log('   ' + JSON.stringify(m))
+}
+if (report.appended) console.log('\n✓ 已追加快捷台词 ' + report.appended + ' 条')
+if (report.appendSkipped) console.log('\n⚠️ 追加台词跳过：' + report.appendSkipped)
 if (report.unmapped) {
   console.log('\n⚠️ 声明属性未在 TEXT/FILL 表里定义目标色：')
   for (const u of report.unmapped) console.log('   ' + u)
