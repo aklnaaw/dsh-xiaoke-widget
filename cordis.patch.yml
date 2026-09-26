@@ -1,15 +1,16 @@
 # ============================================================================
-# dsh-whale-widget —— DSH bundle patch
+# dsh-xiaoke-widget —— DSH bundle patch
 # ============================================================================
-# 这是插件的"挂载声明"。DSH 启动时按 bundle 层栈叠加各插件 patch，
-# 本文件会把鲸鱼余额挂件插入 Web profile 的配置树。
+# 这是「小克」挂件的挂载声明。DSH 启动时按 bundle 层栈叠加各插件 patch，
+# 本文件把挂件插入 Web profile 的配置树。
 #
-# 安装方式（不再需要手工复制/手工改 profile patch）：
-#   dsh plugin --profile web add dsh-whale-widget
-# 或本地开发安装：
+# ⚠️ bundle id 与包名都与上游 dsh-whale-widget 保持不同 —— 两者可以同时安装、
+#    各挂一只桌宠（路由前缀 /dsh-xiaoke/ 与 /dsh-whale/ 互不冲突）。
+#
+# 安装方式：
 #   dsh plugin --profile web add link:<本目录绝对路径>
 # ============================================================================
 
 - insert:
-    - id: dsh-whale-widget
-      name: dsh-whale-widget
+    - id: xiaoke-widget
+      name: dsh-xiaoke-widget
