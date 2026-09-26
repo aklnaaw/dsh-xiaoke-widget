@@ -29,7 +29,8 @@
   "scripts": {
     "build": "node tools/build-xiaoke.mjs",
     "check": "node tools/build-xiaoke.mjs --check",
-    "verify": "node tools/build-xiaoke.mjs --check && node --check lib/xiaoke-index.js && node --check lib/xiaoke-widget.js && node tools/verify-host-routes.mjs && node tools/verify-widget-exec.cjs"
+    "verify": "node tools/build-xiaoke.mjs --check && node --check lib/xiaoke-index.js && node --check lib/xiaoke-widget.js && node tools/verify-host-routes.mjs && node tools/verify-widget-exec.cjs",
+    "copy": "node tools/dump-copy.mjs --write"
   },
   "license": "MIT"
 }
