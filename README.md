@@ -34,6 +34,7 @@ DSH Web 界面右下角的一只桌宠。点她会冒出各种 Claude 味的碎�
 ```bash
 dsh plugin --profile web add link:<这个目录>
 ```
+### **嫌麻烦可以丢给dsh或者Claude Code和codex让他们装**
 
 装完重启一下 `dsh web`。
 
