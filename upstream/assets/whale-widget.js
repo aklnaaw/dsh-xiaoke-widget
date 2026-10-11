@@ -5092,7 +5092,16 @@ function openApiModelPanel(modelId) {
           keyRef: (keyRefInp.value || '').trim(),
           baseUrl: (baseInp.value || '').trim(),
           balance: {
-            url: (balUrl.value || '').trim(),
+            url: (function () {
+              var u = (balUrl.value || '').trim()
+              if (!u) return u
+              var h = ''
+              try { h = new URL(u).hostname.toLowerCase() } catch (e) { return '' }
+              // CWE-918: 阻止余额接口 URL 指向内网/本机/云元数据等 SSRF 高危目标
+              var blocked = /^(localhost$|127\.|0\.0\.0\.0$|::1$|169\.254\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h) ||
+                h === 'metadata.google.internal'
+              return blocked ? '' : u
+            })(),
             auth: (authInp.value || '').trim(),
             // v789：显式带上方法/请求体（GET + 空体 = 老行为；宿主侧空值不覆盖模板）
             method: (balMethod.value || 'GET').toUpperCase(),
