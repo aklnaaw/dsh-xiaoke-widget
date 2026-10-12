@@ -17,14 +17,15 @@
 // 放在 GitHub Releases，用户下载后在「资源管理 → 动态小克 · 高清档」里选文件安装，装了以后挂件调大才用。
 // ============================================================================
 
-// 高清包：两个下载地址（动图作者的 fork 和本仓库各发一份 Release，传的是同一个 zip，一个不能用了还有另一个），
+// 高清包：两个下载地址（本仓库 Release 优先，动图作者的 fork 作备用），
 // 和包里两个文件的 SHA-256（tools/pack-anim-hd.mjs 打包时会打印）。只装核对得上的文件。
 // ⚠️ v2：原包的 512 素材同样有「贴不到底」问题（底部留白 40px），已用
 //    tools/fix-anim-baseline.py 修正（只改帧偏移，未动像素），因此重新打包、
-//    哈希已更新。Release 上的 zip 需要同步替换成新打的那份。
+//    哈希已更新。**新包发在本仓库的 Release（tag 1012『雾薄云山』）**。
+// ⚠️ AirsEDA 的 Release（tag xiaoke-anim-hd-v1）里仍是**旧包**，哈希对不上、
+//    装了会被拒绝，所以它只能作为「将来更新后的备用地址」，暂不列入。
 const HD_URLS = [
-  'https://github.com/AirsEDA/dsh-xiaoke-widget/releases/download/xiaoke-anim-hd-v1/xiaoke-anim-hd.zip',
-  'https://github.com/aklnaaw/dsh-xiaoke-widget/releases/download/xiaoke-anim-hd-v1/xiaoke-anim-hd.zip',
+  'https://github.com/aklnaaw/dsh-xiaoke-widget/releases/download/1012『雾薄云山』/xiaoke-anim-hd.zip',
 ]
 const HD_FILES = {
   'xiaoke-anim-512.webp': '253ae96ec79780700ab0552f08fb6016d52af891dbc789be8bfa2556fdbca88a',
