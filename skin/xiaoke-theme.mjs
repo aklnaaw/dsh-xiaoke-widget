@@ -222,6 +222,23 @@ export const EXACT = [
   // 注意：EXACT 在 rename() 之后应用，所以这里要写**改名后**的字符串
   ['（浅色卡片上使用既有 .dshxkv-bubsec：自带 #9fb0d9 颜色与上分隔线）',
    '（浅色卡片上使用既有 .dshxkv-bubsec：自带 #a09d96 颜色与上分隔线）'],
+
+  // —— 上游新增台词自带的**冷色跑马灯** ——
+  // 上游 v0.4.x 往默认台词池里加了一句「你知道吗，我们的宇宙是虚拟的…内存泄露」，
+  // 并给它配了 `rgb: "indigo"`（靛蓝夜曲）。跑马灯方案整体属于「用户可自选内容」，
+  // 主题刻意不动 rgb() 三元组；但**这一条是上游写死的默认值、不是用户选的**，
+  // 在珊瑚橙主题上会突兀地闪蓝紫。只针对这一句把 indigo 换成 sunset（落日熔金）。
+  ['"t":  "你知道吗，我们的宇宙是虚拟的，因为垃圾会自发的产生但不会自发的消失，这是内存泄露",\n                                                                               "w":  3,\n                                                                               "bold":  true,\n                                                                               "size":  5,\n                                                                               "rgb":  "indigo",',
+   '"t":  "你知道吗，我们的宇宙是虚拟的，因为垃圾会自发的产生但不会自发的消失，这是内存泄露",\n                                                                               "w":  3,\n                                                                               "bold":  true,\n                                                                               "size":  5,\n                                                                               "rgb":  "sunset",'],
+
+  // —— 等待提示的默认内容也挂冷色跑马灯 ——
+  // 「提问 / 授权等待提示」的出厂默认句（`正在等待老大回答` / `正在等待老大授权`）
+  // 同样被上游配了 rgb: 'indigo'。这是**出厂默认**，不是用户选的，一并换成 sunset。
+  // 前端（bubbleWaitDefaultLines）与宿主（同名的默认值）各有一处，两处都要改。
+  ["{ type: 'text', text: (isApproval ? '正在等待老大授权' : '正在等待老大回答'), size: 7, bold: true, bgRgb: '', bg: '', rgb: 'indigo', color: '' }",
+   "{ type: 'text', text: (isApproval ? '正在等待老大授权' : '正在等待老大回答'), size: 7, bold: true, bgRgb: '', bg: '', rgb: 'sunset', color: '' }"],
+  ["{ type: 'text', text: isApproval ? '正在等待老大授权' : '正在等待老大回答', size: 7, bold: true, bgRgb: '', bg: '', rgb: 'indigo', color: '' }",
+   "{ type: 'text', text: isApproval ? '正在等待老大授权' : '正在等待老大回答', size: 7, bold: true, bgRgb: '', bg: '', rgb: 'sunset', color: '' }"],
 ]
 
 // 同一 hex 在不同**属性**下需要不同目标色的例外（属性感知映射的补丁层）。
@@ -247,6 +264,17 @@ export const MODULE_BG_DEFAULT = '#f5f0e8'
 //   · 跑马灯 15 套方案的 rgb() 三元组 —— 走 RGBA_MAP/EXACT 之外，本来就不参与换色。
 // 判据只看冷色，所以这里只需列出「偏蓝但合法」的。
 export const COLOR_EXEMPT = /^#(b060c8|3aa6c8|6a6ad0|c84a8a|d06a8a)$/
+
+// —— 冷色**跑马灯方案**的豁免名单（build 的 ⑥ 项用）——
+// ⑥ 扫的是产物里「被赋值的冷色方案名」（`"rgb": "indigo"` 这种），
+// 因为 ⑤ 只看 hex，抓不到方案名。默认池里写死的冷色方案要在暖色主题上换掉，
+// 但下面这个是从上游继承、且属于既有设计、用户已接受的一项，故豁免：
+//   · galaxy（银河星紫）—— 上游给 `DeepSleep...` 配的就是它；本项目把台词改成
+//     `Thinking...` 时沿用了同一个颜色（构建期替换，见 COPY_REWRITE）。
+//     它在池子里一直是紫蓝渐变，不是本次新增的问题项。
+// 若以后决定连它一起换成暖色，把 'galaxy' 从本集合删掉即可 —— ⑥ 会立刻报出来。
+export const COLOR_EXEMPT_SCHEMES = new Set(['galaxy'])
+
 
 // 判定一个 CSS 声明属性属于「文字色」还是「填充色」。
 export const TEXT_PROPS = new Set([

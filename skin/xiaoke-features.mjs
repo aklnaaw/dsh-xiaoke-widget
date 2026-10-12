@@ -19,16 +19,24 @@
 
 // 高清包：两个下载地址（动图作者的 fork 和本仓库各发一份 Release，传的是同一个 zip，一个不能用了还有另一个），
 // 和包里两个文件的 SHA-256（tools/pack-anim-hd.mjs 打包时会打印）。只装核对得上的文件。
+// ⚠️ v2：原包的 512 素材同样有「贴不到底」问题（底部留白 40px），已用
+//    tools/fix-anim-baseline.py 修正（只改帧偏移，未动像素），因此重新打包、
+//    哈希已更新。Release 上的 zip 需要同步替换成新打的那份。
 const HD_URLS = [
   'https://github.com/AirsEDA/dsh-xiaoke-widget/releases/download/xiaoke-anim-hd-v1/xiaoke-anim-hd.zip',
   'https://github.com/aklnaaw/dsh-xiaoke-widget/releases/download/xiaoke-anim-hd-v1/xiaoke-anim-hd.zip',
 ]
 const HD_FILES = {
-  'xiaoke-anim-512.webp': 'ac1e52cc2fe0c0b5fd89b42b80b18ce0e7b51910d5ea8d3b77e15ce321afdfeb',
-  'xiaoke-anim-cry-512.webp': '5a6844667d246fa804c2bb291049989a5e4c87ab0de30d8a0475a708270850a1',
+  'xiaoke-anim-512.webp': '253ae96ec79780700ab0552f08fb6016d52af891dbc789be8bfa2556fdbca88a',
+  'xiaoke-anim-cry-512.webp': '92fde1aa0f3c5454e88be5ddd215b7ec0f99bf7379063bc8fca196f88a370884',
 }
 
 const isAnim = v => `xkIsAnim(${v})`
+
+// —— 素材版本号（缓存失效用）——
+// 每次改动 assets/xiaoke-anim*.webp 都要 +1。原理见 xkAnimUrl() 里的注释：
+// 路由是 max-age=3600 + 固定 URL，不带版本号的话素材更新后浏览器不会重新取。
+const ANIM_ASSET_VERSION = 2
 
 const MOOD_CODE = `// —— 内置动态小克（skin/xiaoke-features.mjs）——
 // 「小克（动态）」只有日常表情；「小克（含余额预警）」在余额预警触发时换成哭脸。
@@ -44,7 +52,13 @@ function xkAnimRes() {
   return px > 384 && xkHdInstalled ? 512 : px > 256 ? 384 : 256
 }
 function xkAnimUrl(cry) {
-  return '/dsh-xiaoke/' + (cry ? 'anim-cry' : 'anim') + '.webp?r=' + xkAnimRes()
+  // &v= 是**素材版本号**，不是档位。宿主路由只读 r、忽略 v。
+  // 为什么必须带：图片 URL 若只有 ?r=256，那素材文件更新后 URL 不变，而路由返回
+  //   Cache-Control: max-age=3600 —— 浏览器会一直用旧图（连请求都不发），
+  //   表现为「改了素材但界面没变」，且普通刷新/F5 都无效。改一次素材就把这个号 +1。
+  // 注意：这里是**构建期插值**（MOOD_CODE 是模板字符串），所以要用 \${} 而不是裸变量名 ——
+  //   裸写变量名会原样进产物，运行时 ReferenceError。
+  return '/dsh-xiaoke/' + (cry ? 'anim-cry' : 'anim') + '.webp?r=' + xkAnimRes() + '&v=${ANIM_ASSET_VERSION}'
 }
 function xkShowImage(url) {
   img.src = url
@@ -191,7 +205,7 @@ export const WIDGET_PATCHES = [
   {
     why: '刷新页面时直接用上次选的内置动态小克（这里还量不到大小，先用默认大小够用的 256 档）',
     from: "if (initRoleId && initRoleId !== 'default') initRoleUrl = '/dsh-xiaoke/role-image.png?id=' + encodeURIComponent(initRoleId)",
-    to: "if (initRoleId === 'anim' || initRoleId === 'anim-mood') initRoleUrl = '/dsh-xiaoke/anim.webp?r=256'\n" +
+    to: "if (initRoleId === 'anim' || initRoleId === 'anim-mood') initRoleUrl = '/dsh-xiaoke/anim.webp?r=256&v=" + ANIM_ASSET_VERSION + "'\n" +
         "  else if (initRoleId && initRoleId !== 'default') initRoleUrl = '/dsh-xiaoke/role-image.png?id=' + encodeURIComponent(initRoleId)",
   },
   {
@@ -338,8 +352,8 @@ const ANIM_ROUTES = `
     }`
 
 const BUILTIN_ROLES = `[r,
-            { id: 'anim', name: '小克（动态）', url: '/dsh-xiaoke/anim.webp?r=256', pinned: false, pinnedAt: null, createdAt: null, format: 'webp' },
-            { id: 'anim-mood', name: '小克（含余额预警）', url: '/dsh-xiaoke/anim.webp?r=256', pinned: false, pinnedAt: null, createdAt: null, format: 'webp' }]`
+            { id: 'anim', name: '小克（动态）', url: '/dsh-xiaoke/anim.webp?r=256&v=${ANIM_ASSET_VERSION}', pinned: false, pinnedAt: null, createdAt: null, format: 'webp' },
+            { id: 'anim-mood', name: '小克（含余额预警）', url: '/dsh-xiaoke/anim.webp?r=256&v=${ANIM_ASSET_VERSION}', pinned: false, pinnedAt: null, createdAt: null, format: 'webp' }]`
 
 export const HOST_PATCHES = [
   {

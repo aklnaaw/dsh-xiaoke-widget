@@ -24,7 +24,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   RENAMES, HEX_TEXT, HEX_FILL, HEX_FILL_OVERRIDE, RGBA_MAP, EXACT,
-  TEXT_PROPS, FILL_PROPS, COLOR_EXEMPT,
+  TEXT_PROPS, FILL_PROPS, COLOR_EXEMPT, COLOR_EXEMPT_SCHEMES,
   COPY_REWRITE, COPY_APPEND, LONG_LINE_THRESHOLD, LONG_LINE_SIZE, COPY_FORBIDDEN,
 } from '../skin/xiaoke-theme.mjs'
 import { HOST_PATCHES, WIDGET_PATCHES } from '../skin/xiaoke-features.mjs'
@@ -162,6 +162,21 @@ function recolor(text, report) {
     if (b > r + 20 && b > g + 10) cold.set(hex, (cold.get(hex) || 0) + 1)
   }
   if (cold.size) report.coldLeftovers = cold
+
+  // ⑥ 冷色**跑马灯方案**扫描 —— ⑤ 只看 hex，抓不到 `rgb: "indigo"` 这种方案名。
+  // 台词/模块可以挂「跑马灯配色方案」，17 套里有几套是冷色（靛蓝/银河紫/深海蓝/极光/薰衣草）。
+  // 用户自己选的无所谓；但**默认台词池/默认模块里写死的**冷色方案，在暖色主题上会很突兀
+  //   （实测踩过：上游 v0.4.x 给新台词配了 indigo，界面上闪蓝紫）。
+  // 只认「被赋值」的用法（`"rgb": "indigo"` / `rgb: 'indigo'`），不认 CSS 方案定义
+  // 与方案清单（QC_SCHEMES）—— 那些是用户可选项的定义，必须保留。
+  const coldSchemes = new Map()
+  for (const name of ['indigo', 'galaxy', 'deepsea', 'aurora', 'lavender', 'mint']) {
+    if (COLOR_EXEMPT_SCHEMES.has(name)) continue
+    const re = new RegExp('["\']?rgb["\']?\\s*:\\s*["\']' + name + '["\']', 'g')
+    const n = (text.match(re) || []).length
+    if (n) coldSchemes.set(name, n)
+  }
+  if (coldSchemes.size) report.coldSchemes = coldSchemes
 
   if (unmapped.size) report.unmapped = unmapped
   return text
@@ -384,6 +399,14 @@ if (report.coldLeftovers) {
   }
   console.log('   要保留就在 skin/xiaoke-theme.mjs 的 COLOR_EXEMPT 里列出（用户可选内容才该保留）。')
 }
+if (report.coldSchemes) {
+  console.log('\n✗ 默认内容里挂着冷色跑马灯方案（暖色主题上会突兀）：')
+  for (const [c, n] of [...report.coldSchemes].sort((a, b) => b[1] - a[1])) {
+    console.log(`   rgb: "${c}"  ×${n}`)
+  }
+  console.log('   要么在 skin/xiaoke-theme.mjs 的 EXACT 里换成暖色方案（如 sunset），')
+  console.log('   要么确认是既有设计后加进 COLOR_EXEMPT_SCHEMES。')
+}
 if (report.copyMissed && report.copyMissed.length) {
   console.log('\n⚠️ 以下台词在源码里没找到（上游可能改过措辞，请更新主题表）：')
   for (const m of report.copyMissed) console.log('   ' + JSON.stringify(m))
@@ -416,7 +439,7 @@ if (report.featureErrors) {
 const hardFail = report.poolError || report.poolLeaked || report.poolMissing || report.poolMissingAppend || report.poolResidual || report.featureErrors
 // 冷色残留也算硬失败：这套皮肤是暖色系，漏改的冷色在界面上一眼可见
 // （v0.4.0 的 #3a56a8 / #7d8db8 就是这么漏过去的 —— 当时构建完全静默）。
-const colorFail = !!report.coldLeftovers
+const colorFail = !!report.coldLeftovers || !!report.coldSchemes
 const staleFail = stale.length > 0
 if (staleFail) {
   console.error('✗ 构建产物不是最新的：\n  ' + stale.join('\n  '))
