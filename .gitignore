@@ -33,3 +33,8 @@ node_modules/
 *.bak2
 *.bak-devpaths
 _patch_*.patch
+
+# 台词清单 / 定稿记录：本地生成即可，不进仓库
+# （`npm run copy` 会重新生成 COPY-INVENTORY.md；它是给人看的中间产物，不是项目文件）
+COPY-INVENTORY.md
+COPY-FINAL.md
